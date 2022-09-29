@@ -35,8 +35,8 @@ tasks.named('test') {
     useJUnitPlatform()
 }
 
-sourceSets {
+/*sourceSets {
     test {
         //java.srcDirs = ['src/test/java/com/rsw/unit', 'src/test/java/com/rsw/intg']
     }
-}
+}*/

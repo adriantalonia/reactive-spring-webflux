@@ -3,6 +3,43 @@ spring:
     name: movies-info-service
   profiles:
     active: local
-
+  mongodb:
+    embedded:
+      version: 5.0.12
 server:
   port: 8080
+---
+spring:
+  config:
+    activate:
+      on-profile: local
+  data:
+    mongodb:
+      host: localhost
+      port: 27017
+      database: local
+---
+spring:
+  config:
+    activate:
+      on-profile: nonprod
+  data:
+    mongodb:
+      host: localhost
+      port: 27017
+      database: local
+---
+spring:
+  config:
+    activate:
+      on-profile: prod
+  data:
+    mongodb:
+      host: localhost
+      port: 27017
+      database: local
+---
+logging:
+  level:
+    root: info
+
