@@ -97,11 +97,52 @@ class MoviesInfoControllerIntgTest {
                 .exchange()
                 .expectStatus()
                 .is2xxSuccessful()
-                .expectBody(MovieInfo.class)
+                .expectBody()
+                .jsonPath("$.name").isEqualTo("Dark Knight Rises");
+                /*.expectBody(MovieInfo.class)
                 .consumeWith(movieInfoEntityExchangeResult -> {
                     var movie = movieInfoEntityExchangeResult.getResponseBody();
                     assertNotNull(movie);
-                });
+                });*/
 
     }
+
+    @Test
+    void updatedMovieInfo() {
+        //given
+        var movieInfo = new MovieInfo(null, "Dark Knight Rises",
+                2005, List.of("Christian Bale", "Michael Cane"), LocalDate.parse("2005-06-15"));
+
+        var movieInfoId = "abc";
+        //when
+        webTestClient
+                .put()
+                .uri(MOVIES_INFO_URL+"/{id}", movieInfoId)
+                .bodyValue(movieInfo)
+                .exchange()
+                .expectStatus()
+                .isOk()
+                .expectBody(MovieInfo.class)
+                .consumeWith(movieInfoEntityExchangeResult -> {
+                    var updatedMovieInfo = movieInfoEntityExchangeResult.getResponseBody();
+                    assert updatedMovieInfo != null;
+                    assert updatedMovieInfo.getMovieInfoId() != null;
+                    assertEquals("Dark Knight Rises", updatedMovieInfo.getName());
+                });
+
+        //then
+    }
+
+    @Test
+    void deleteMovieInfoById() {
+
+        var movieInfoId = "abc";
+
+        webTestClient.delete()
+                .uri(MOVIES_INFO_URL+"/{id}", movieInfoId)
+                .exchange()
+                .expectStatus()
+                .isNoContent();
+    }
+
 }
