@@ -16,7 +16,7 @@ public class MoviesInfoService {
     }
 
     public Mono<MovieInfo> addMovieInfo(MovieInfo movieInfo) {
-        return movieInfoRepository.save(movieInfo);
+        return movieInfoRepository.save(movieInfo).log();
     }
 
     public Flux<MovieInfo> getAllMovieInfos() {
@@ -39,6 +39,6 @@ public class MoviesInfoService {
     }
 
     public Mono<Void> deleteMovie(String id) {
-        return movieInfoRepository.deleteById(id);
+        return movieInfoRepository.deleteById(id).log();
     }
 }
