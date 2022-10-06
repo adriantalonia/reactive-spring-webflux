@@ -143,11 +143,38 @@ public class MoviesInfoControllerUnitTest {
         when(moviesInfoServiceMock.deleteMovie(isA(String.class))).thenReturn(Mono.empty().then());
 
         webTestClient.delete()
-                .uri(MOVIES_INFO_URL+"/{id}", movieInfoId)
+                .uri(MOVIES_INFO_URL + "/{id}", movieInfoId)
                 .exchange()
                 .expectStatus()
                 .isNoContent();
     }
 
+    /**
+     * Validation
+     **/
+
+    @Test
+    void addMovieInfoValidation() {
+        //given
+        var movieInfo = new MovieInfo(null, "",
+                null, List.of("Christian Bale", "Michael Cane"), LocalDate.parse("2005-06-15"));
+
+        //when
+        webTestClient
+                .post()
+                .uri(MOVIES_INFO_URL)
+                .bodyValue(movieInfo)
+                .exchange()
+                .expectStatus()
+                .isBadRequest()
+                .expectBody(String.class)
+                .consumeWith(stringEntityExchangeResult -> {
+                    var responseBody = stringEntityExchangeResult.getResponseBody();
+                    assert responseBody != null;
+                    assertEquals("movieInfo.name must be present,must not be null", responseBody);
+                });
+
+        //then
+    }
 
 }
