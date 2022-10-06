@@ -24,4 +24,10 @@ public class GlobalErrorHandler {
         log.error("errors: {}", error);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }
+
+    /*@ExceptionHandler(MovieInfoNotfoundException.class)
+    public ResponseEntity<String> handleMovieInfoNotfoundException(MovieInfoNotfoundException ex){
+        log.error("Exception caught in handleMovieInfoNotfoundException :  {} " ,ex.getMessage(),  ex);
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
+    }*/
 }
