@@ -1,0 +1,16 @@
+spring:
+  application:
+    name: movies-review-service
+  profiles:
+    active: local
+  mongodb:
+    embedded:
+      version: 5.0.12
+
+server:
+  port: 8081
+
+logging:
+  level:
+    #root: debug
+    root: info
