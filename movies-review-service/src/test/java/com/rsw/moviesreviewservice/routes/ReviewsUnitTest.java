@@ -11,7 +11,11 @@ import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.reactive.server.WebTestClient;
+import org.springframework.web.util.UriComponentsBuilder;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -29,6 +33,8 @@ public class ReviewsUnitTest {
     @Autowired
     private WebTestClient webTestClient;
 
+    static String REVIEWS_URL = "/v1/reviews";
+
     @Test
     void addReview() {
         //given
@@ -40,7 +46,7 @@ public class ReviewsUnitTest {
         //when
         webTestClient
                 .post()
-                .uri("/v1/reviews")
+                .uri(REVIEWS_URL)
                 .bodyValue(review)
                 .exchange()
                 .expectStatus().isCreated()
@@ -52,6 +58,97 @@ public class ReviewsUnitTest {
                     assertEquals("abc", savedReview.getReviewId());
 
                 });
+
+    }
+
+    @Test
+    void getReviews() {
+        //given
+        var reviewsList = List.of(
+                new Review("abc", 1L, "Awesome Movie", 9.0),
+                new Review(null, 1L, "Awesome Movie1", 9.0),
+                new Review(null, 2L, "Excellent Movie", 8.0));
+
+        when(reviewReactiveRepository.findAll()).thenReturn(Flux.fromIterable(reviewsList));
+
+        webTestClient
+                .get()
+                .uri(REVIEWS_URL)
+                .exchange()
+                .expectStatus()
+                .isOk()
+                .expectBodyList(Review.class)
+                .hasSize(3);
+    }
+
+    @Test
+    void updateReview() {
+        var reviewId = "abc";
+        var reviewUpdated = new Review(null, 1L, "Awesome test", 7.0);
+        var existingReview = new Review("abc", 1L, "Awesome Movie", 9.0);
+
+
+        when(reviewReactiveRepository.findById(isA(String.class))).thenReturn(Mono.just(existingReview));
+        when(reviewReactiveRepository.save(isA(Review.class))).thenReturn(Mono.just(reviewUpdated));
+
+        //when
+        webTestClient
+                .put()
+                .uri(REVIEWS_URL + "/{id}", reviewId)
+                .bodyValue(reviewUpdated)
+                .exchange()
+                .expectStatus()
+                .isOk()
+                .expectBody(Review.class)
+                .consumeWith(reviewEntityExchangeResult -> {
+                    var reviewMovieInfo = reviewEntityExchangeResult.getResponseBody();
+                    assert reviewMovieInfo != null;
+                    assert reviewMovieInfo.getMovieInfoId() != null;
+                    assertEquals("Awesome test", reviewMovieInfo.getComment());
+                    assertEquals(7.0, reviewMovieInfo.getRating());
+                });
+    }
+
+    @Test
+    void deleteReview() {
+        //given
+        var reviewId = "abc";
+        var existingReview = new Review("abc", 1L, "Awesome Movie", 9.0);
+
+        //when
+        when(reviewReactiveRepository.findById(isA(String.class))).thenReturn(Mono.just(existingReview));
+        when(reviewReactiveRepository.deleteById(isA(String.class))).thenReturn(Mono.empty().then());
+
+        webTestClient
+                .delete()
+                .uri(REVIEWS_URL + "/{id}", reviewId)
+                .exchange()
+                .expectStatus()
+                .isNoContent();
+    }
+
+    @Test
+    void getReviewsByMovieInfoId() {
+        //given
+        var reviewsList = List.of(
+                new Review("abc", 1L, "Awesome Movie", 9.0),
+                new Review(null, 1L, "Awesome Movie1", 9.0));
+
+        var uri = UriComponentsBuilder.fromUriString(REVIEWS_URL)
+                .queryParam("movieInfoId", 1)
+                .buildAndExpand()
+                .toUri();
+
+        //when
+        when(reviewReactiveRepository.findByMovieInfoId(isA(Long.class))).thenReturn(Flux.fromIterable(reviewsList));
+
+        webTestClient.get()
+                .uri(uri)
+                .exchange()
+                .expectStatus()
+                .is2xxSuccessful()
+                .expectBodyList(Review.class)
+                .hasSize(2);
 
     }
 }
