@@ -1,8 +1,11 @@
 package com.rsw.moviesreviewservice.handler;
 
 import com.rsw.moviesreviewservice.domain.Review;
+import com.rsw.moviesreviewservice.exception.ReviewDataException;
+import com.rsw.moviesreviewservice.exception.ReviewNotFoundException;
 import com.rsw.moviesreviewservice.repository.ReviewReactiveRepository;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.server.ServerRequest;
@@ -10,9 +13,16 @@ import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import javax.validation.ConstraintViolation;
+import javax.validation.Validator;
+import java.util.stream.Collectors;
+
 @Slf4j
 @Component
 public class ReviewHandler {
+
+    @Autowired
+    private Validator validator;
 
     private ReviewReactiveRepository reviewReactiveRepository;
 
@@ -23,14 +33,29 @@ public class ReviewHandler {
     public Mono<ServerResponse> addReview(ServerRequest request) {
 
         return request.bodyToMono(Review.class)
+                .doOnNext(this::validate)
                 .flatMap(reviewReactiveRepository::save)
                 .flatMap(ServerResponse.status(HttpStatus.CREATED)::bodyValue);
+    }
+
+    private void validate(Review review) {
+        var constrainViolations = validator.validate(review);
+        log.info("constraintViolations: {}", constrainViolations);
+        if (constrainViolations.size() > 0) {
+            var errorMessage = constrainViolations
+                    .stream()
+                    .map(ConstraintViolation::getMessage)
+                    .sorted()
+                    .collect(Collectors.joining(","));
+            throw new ReviewDataException(errorMessage);
+        }
+
     }
 
     public Mono<ServerResponse> getReviews(ServerRequest request) {
 
         var movieInfoId = request.queryParam("movieInfoId");
-        if(movieInfoId.isPresent()) {
+        if (movieInfoId.isPresent()) {
             var reviewsFlux = reviewReactiveRepository.findByMovieInfoId(Long.valueOf(movieInfoId.get()));
             return buildReviewResponse(reviewsFlux);
         } else {
@@ -45,7 +70,8 @@ public class ReviewHandler {
 
     public Mono<ServerResponse> updateReview(ServerRequest request) {
         var reviewId = request.pathVariable("id");
-        var existingReview = reviewReactiveRepository.findById(reviewId);
+        var existingReview = reviewReactiveRepository.findById(reviewId)
+                .switchIfEmpty(Mono.error(new ReviewNotFoundException("Review not found for the given Review id " + reviewId)));
 
         return existingReview
                 .flatMap(review -> request.bodyToMono(Review.class)
@@ -56,6 +82,7 @@ public class ReviewHandler {
                         })
                         .flatMap(reviewReactiveRepository::save)
                         .flatMap(savedReview -> ServerResponse.ok().bodyValue(savedReview)));
+        //.switchIfEmpty(ServerResponse.notFound().build());
     }
 
     public Mono<ServerResponse> deleteReview(ServerRequest request) {
