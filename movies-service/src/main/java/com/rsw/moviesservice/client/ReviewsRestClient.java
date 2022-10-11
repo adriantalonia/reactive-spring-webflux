@@ -1,6 +1,8 @@
 package com.rsw.moviesservice.client;
 
 import com.rsw.moviesservice.domain.Review;
+import com.rsw.moviesservice.exception.ReviewsClientException;
+import com.rsw.moviesservice.exception.ReviewsServerException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -32,7 +34,7 @@ public class ReviewsRestClient {
         return webClient.get()
                 .uri(url)
                 .retrieve()
-/*                .onStatus(HttpStatus::is4xxClientError, (clientResponse -> {
+                .onStatus(HttpStatus::is4xxClientError, (clientResponse -> {
                     log.info("Status code : {}", clientResponse.statusCode().value());
                     if(clientResponse.statusCode().equals(HttpStatus.NOT_FOUND)){
                         return Mono.empty();
@@ -44,9 +46,9 @@ public class ReviewsRestClient {
                     log.info("Status code : {}", clientResponse.statusCode().value());
                     return clientResponse.bodyToMono(String.class)
                             .flatMap(response -> Mono.error(new ReviewsServerException(response)));
-                }))*/
+                }))
                 .bodyToFlux(Review.class);
-/*                .retryWhen(RetryUtil.retrySpec());*/
+                //.retryWhen(RetryUtil.retrySpec());
 
     }
 
