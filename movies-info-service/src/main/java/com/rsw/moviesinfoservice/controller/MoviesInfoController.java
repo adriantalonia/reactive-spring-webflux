@@ -13,7 +13,7 @@ import javax.validation.Valid;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/movieInfos")
+@RequestMapping("/v1/movieInfos")
 public class MoviesInfoController {
 
     private MoviesInfoService moviesInfoService;
