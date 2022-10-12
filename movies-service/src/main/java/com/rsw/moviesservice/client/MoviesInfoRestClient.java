@@ -44,6 +44,7 @@ public class MoviesInfoRestClient {
                             .flatMap(response -> Mono.error(new MoviesInfoServerException(response)));
                 }))
                 .bodyToMono(MovieInfo.class)
+                .retry(3)
                 .log();
     }
 }
