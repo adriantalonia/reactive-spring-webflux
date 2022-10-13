@@ -40,10 +40,10 @@ class MoviesControllerIntgTest {
     void retrieveMovieById() {
         //given
         var movieId = "abc";
-        stubFor(get(urlEqualTo("/v1/movieInfos"+"/"+movieId))
+        stubFor(get(urlEqualTo("/v1/movieInfos" + "/" + movieId))
                 .willReturn(aResponse()
-                .withHeader("Content-Type", "application/json")
-                .withBodyFile("movieinfo.json")));
+                        .withHeader("Content-Type", "application/json")
+                        .withBodyFile("movieinfo.json")));
 
         stubFor(get(urlPathEqualTo("/v1/reviews"))
                 .withQueryParam("movieInfoId", equalTo(movieId))
@@ -77,9 +77,12 @@ class MoviesControllerIntgTest {
                         .withStatus(404)));
 
         stubFor(get(urlPathEqualTo("/v1/reviews"))
-                .withQueryParam("movieInfoId", equalTo(movieId))
+                //.withQueryParam("movieInfoId", equalTo(movieId))
                 .willReturn(aResponse()
-                        .withStatus(404)));
+                        .withHeader("Content-Type", "application/json")
+                        .withBodyFile("reviews.json"))
+                        //.withStatus(404))
+        );
 
         //when
         webTestClient.get()
@@ -88,6 +91,8 @@ class MoviesControllerIntgTest {
                 .expectStatus().is4xxClientError()
                 .expectBody(String.class)
                 .isEqualTo("There is no MovieInfo available for the passed in Id : abc");
+
+        WireMock.verify(1, getRequestedFor(urlEqualTo("/v1/movieInfos/" + movieId)));
     }
 
 
@@ -148,6 +153,7 @@ class MoviesControllerIntgTest {
     void retrieveMovieById_reviews_5XX() {
         //given
         var movieId = "abc";
+
         stubFor(get(urlEqualTo("/v1/movieInfos/" + movieId))
                 .willReturn(aResponse()
                         .withHeader("Content-Type", "application/json")
@@ -155,7 +161,6 @@ class MoviesControllerIntgTest {
 
 
         stubFor(get(urlPathEqualTo("/v1/reviews"))
-                .withQueryParam("movieInfoId", equalTo(movieId))
                 .willReturn(aResponse()
                         .withStatus(500)
                         .withBody("Review Service Unavailable")));
@@ -168,8 +173,12 @@ class MoviesControllerIntgTest {
                 .expectStatus()
                 .is5xxServerError()
                 .expectBody(String.class)
-                .value(message -> {
+                .isEqualTo("Review Service Unavailable");
+                /*.value(message -> {
                     assertEquals("Review Service Unavailable", message);
-                });
+                });*/
+
+        // then
+        WireMock.verify(4, getRequestedFor(urlPathMatching("/v1/reviews*")));
     }
 }

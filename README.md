@@ -8,9 +8,7 @@
 ## Technology Stack
 - Java 11
 - Gradle
-- Junit5
-- Mockito
-
+- Spring Boot 2.5.3
 
 ## Development Prerequisites
 - Intellij IDEA
